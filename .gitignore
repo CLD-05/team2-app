@@ -1,0 +1,48 @@
+
+---
+
+## team-app `.gitignore`
+
+(Spring Boot 프로젝트 기준)
+
+```gitignore
+# IntelliJ
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+
+# STS / Eclipse
+.project
+.classpath
+.settings/
+.factorypath
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Build
+target/
+build/
+
+# Logs
+*.log
+
+# Env
+.env
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# Java
+*.class
+
+# Docker
+docker-compose.override.yml
+
+# OS
+*.swp
