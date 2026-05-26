@@ -34,6 +34,9 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsECRRole
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: AWS ECR 로그인
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Maven 빌드
         run: mvn clean package -DskipTests
 
