@@ -9,14 +9,19 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: team2-backend
+  APP_NAME: team2
+  CONFIG_REPO: ${{ github.repository_owner }}/team2-config
+  CONFIG_REPO_PATH: apps/resource-ops/base
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  maven-build:
+  ci:
     runs-on: ubuntu-latest
+    outputs:
+      image-repo-tag: ${{ steps.export.outputs.image-repo-tag }}
 
     steps:
       - uses: actions/checkout@v4
@@ -50,3 +55,51 @@ jobs:
           docker push ${URI}
 
           echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
+
+      - name: Export image outputs
+        id: export
+        run: |
+          echo "image-repo-tag=${{ env.ECR_REPOSITORY }}:${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "확인 image-repo-tag=${{ env.ECR_REPOSITORY }}:${IMAGE_TAG}"
+
+  update-config:
+    name: Update Config Repo
+    needs: ci
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'push' && github.ref == 'refs/heads/ci/pipeline'
+
+    steps:
+      - name: 값 확인
+        run: |
+          echo "image-repo-tag=${{ needs.ci.outputs.image-repo-tag }}"
+
+      - name: Config Repo 체크아웃
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.CONFIG_REPO }}
+          token: ${{ secrets.CONFIG_REPO_PAT }}
+          path: config-repo
+          ref: cd/pipeline
+
+      - name: Kustomize 설치
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Kustomize base 이미지 업데이트
+        run: |
+          FULL_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ needs.ci.outputs.image-repo-tag }}"
+          echo "Updated: ${{ env.APP_NAME }}=${FULL_URI}"
+          cd config-repo/${{ env.CONFIG_REPO_PATH }}
+          kustomize edit set image ${{ env.APP_NAME }}=${FULL_URI}
+
+      - name: Config Repo Commit·Push
+        run: |
+          FULL_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ needs.ci.outputs.image-repo-tag }}"
+          cd config-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --staged --quiet || git commit \
+            -m "chore: update ${{ env.APP_NAME }} dev image to ${FULL_URI} [skip ci]"
+          git push origin cd/pipeline
