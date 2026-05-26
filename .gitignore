@@ -1,3 +1,51 @@
+# IntelliJ
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+
+# STS / Eclipse
+.project
+.classpath
+.settings/
+.factorypath
+.apt_generated
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Build
+target/
+build/
+
+# Logs
+*.log
+
+# Env
+.env
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# Java
+*.class
+
+# Docker
+docker-compose.override.yml
+
+# OS
+*.swp
+
+# Spring
+src/main/resources/application.properties
+src/main/resources/application.yml
+
+!**/src/main/**/target/
+!**/src/test/**/target/<<<<<<< HEAD
 
 ---
 
@@ -46,3 +94,42 @@ docker-compose.override.yml
 
 # OS
 *.swp
+=======
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+
+src/main/resources/application.properties
+src/main/resources/application.yml
+>>>>>>> 07543a9 (feat: add resource recommendation logic)
