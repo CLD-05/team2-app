@@ -8,6 +8,7 @@ on:
 
 env:
   AWS_REGION: "ap-northeast-2"
+  ECR_REPOSITORY: "ECR_창고_이름"
 
 permissions:
   id-token: write
@@ -33,15 +34,13 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsECRRole
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: AWS 연결 및 로그인 상태 검증
-        run: aws sts get-caller-identity
-
       - name: Maven 빌드
         run: mvn clean package -DskipTests
 
       - name: Docker 빌드
         run: |
           TAG="sha-${GITHUB_SHA::7}"
-          echo "생성된 도커 이미지 태그: ${TAG}"
-          docker build -t team2-app:${TAG} .
+
+          docker build -t ops-app:${TAG} .
+
           echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
