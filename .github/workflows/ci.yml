@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 env:
-  AWS_REGION: "ap-northeast-2"
-  ECR_REPOSITORY: "ECR_창고_이름"
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: team2-backend
 
 permissions:
   id-token: write
@@ -37,10 +37,13 @@ jobs:
       - name: Maven 빌드
         run: mvn clean package -DskipTests
 
-      - name: Docker 빌드
+      - name: Docker 빌드 및 ECR Push
         run: |
           TAG="sha-${GITHUB_SHA::7}"
+          REGISTRY="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
+          URI="${REGISTRY}/${{ env.ECR_REPOSITORY }}:${TAG}"
 
-          docker build -t ops-app:${TAG} .
+          docker build -t ${URI} .
+          docker push ${URI}
 
           echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
