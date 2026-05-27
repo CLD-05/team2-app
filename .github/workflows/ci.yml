@@ -9,9 +9,8 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: team2-backend
-  APP_NAME: team2
+  APP_NAME: team2-backend
   CONFIG_REPO: ${{ github.repository_owner }}/team2-config
-  CONFIG_REPO_PATH: apps/resource-ops/base
 
 permissions:
   id-token: write
@@ -66,7 +65,7 @@ jobs:
     name: Update Config Repo
     needs: ci
     runs-on: ubuntu-24.04
-    if: github.event_name == 'push' && github.ref == 'refs/heads/ci/pipeline'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/ci/pipeline' || github.ref == 'refs/heads/main')
 
     steps:
       - name: 값 확인
@@ -86,11 +85,18 @@ jobs:
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
 
-      - name: dev overlay 이미지 업데이트
+      - name: 환경별(dev/prod) overlay 이미지 업데이트
         run: |
           FULL_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ needs.ci.outputs.image-repo-tag }}"
+
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            TARGET_PATH="apps/resource-ops/overlays/prod"
+          elif [ "${{ github.ref }}" = "refs/heads/ci/pipeline" ]; then
+            TARGET_PATH="apps/resource-ops/overlays/dev"
+          fi
+
           echo "Updated: ${{ env.APP_NAME }}=${FULL_URI}"
-          cd config-repo/${{ env.CONFIG_REPO_PATH }}
+          cd config-repo/$TARGET_PATH
           kustomize edit set image ${{ env.APP_NAME }}=${FULL_URI}
 
       - name: Config Repo Commit·Push
