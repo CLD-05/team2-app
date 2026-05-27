@@ -86,7 +86,7 @@ jobs:
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
 
-      - name: Kustomize base 이미지 업데이트
+      - name: dev overlay 이미지 업데이트
         run: |
           FULL_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ needs.ci.outputs.image-repo-tag }}"
           echo "Updated: ${{ env.APP_NAME }}=${FULL_URI}"
@@ -101,5 +101,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git diff --staged --quiet || git commit \
-            -m "chore: update ${{ env.APP_NAME }} dev image to ${FULL_URI} [skip ci]"
+            -m "chore(image): bump ${{ env.APP_NAME }} to sha-${GITHUB_SHA::7}"
           git push origin cd/pipeline
