@@ -1,6 +1,13 @@
 package com.example.resourceops.recommendation.service;
 
-import com.example.resourceops.recommendation.dto.ResourceRecommendationResponse;
+import com.example.resourceops.recommendation.calculator.CostCalculator;
+import com.example.resourceops.recommendation.calculator.RecommendationCalculator;
+import com.example.resourceops.recommendation.dto.CostResponseDto;
+import com.example.resourceops.recommendation.dto.ObservedMetricDto;
+import com.example.resourceops.recommendation.dto.OptimizationCompareResponseDto;
+import com.example.resourceops.recommendation.dto.ResourceCostType;
+import com.example.resourceops.recommendation.dto.ResourceRequestDto;
+import com.example.resourceops.recommendation.metrics.ResourceOptimizerMetrics;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -8,49 +15,38 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ResourceRecommendationService {
 
-    private static final double OVER_ALLOCATED_THRESHOLD = 0.30;
+    private final CostCalculator costCalculator;
+    private final RecommendationCalculator recommendationCalculator;
+    private final ResourceOptimizerMetrics resourceOptimizerMetrics;
 
-    public ResourceRecommendationResponse recommendCpuResource(
-            double prometheusRunningHours,
-            double cpuAverageUsage,
-            double cpuRequest
-    ) {
-        if (prometheusRunningHours < 1) {
-            return new ResourceRecommendationResponse(
-                    "HOLD",
-                    "Prometheus 수집 시간이 1시간 미만이므로 추천을 보류합니다.",
-                    cpuAverageUsage,
-                    cpuRequest,
-                    0.0,
-                    "추천 보류"
-            );
-        }
+    public OptimizationCompareResponseDto compare(ResourceRequestDto currentRequest, ObservedMetricDto observedMetric) {
+        CostResponseDto currentCost = costCalculator.calculate(ResourceCostType.CURRENT, currentRequest);
+        ResourceRequestDto recommendedRequest = recommendationCalculator.calculate(currentRequest, observedMetric);
+        CostResponseDto recommendedCost = costCalculator.calculate(ResourceCostType.RECOMMENDED, recommendedRequest);
 
-        if (cpuRequest <= 0) {
-            throw new IllegalArgumentException("CPU request 값은 0보다 커야 합니다.");
-        }
+        resourceOptimizerMetrics.publish(ResourceCostType.CURRENT, currentRequest, currentCost);
+        resourceOptimizerMetrics.publish(ResourceCostType.RECOMMENDED, recommendedRequest, recommendedCost);
 
-        double usageRate = cpuAverageUsage / cpuRequest;
+        double savings = currentCost.totalCostPerMonthUsd() - recommendedCost.totalCostPerMonthUsd();
+        double savingsPercent = currentCost.totalCostPerMonthUsd() == 0.0
+                ? 0.0
+                : savings / currentCost.totalCostPerMonthUsd() * 100.0;
 
-        if (usageRate < OVER_ALLOCATED_THRESHOLD) {
-            return new ResourceRecommendationResponse(
-                    "OVER_ALLOCATED",
-                    "CPU 평균 사용량이 request의 30% 미만이므로 과할당 가능성이 높습니다.",
-                    cpuAverageUsage,
-                    cpuRequest,
-                    usageRate,
-                    "CPU request 감소 추천"
-            );
-        }
-
-        return new ResourceRecommendationResponse(
-                "NORMAL",
-                "CPU 평균 사용량이 적정 범위입니다.",
-                cpuAverageUsage,
-                cpuRequest,
-                usageRate,
-                "유지"
+        return new OptimizationCompareResponseDto(
+                currentRequest,
+                observedMetric,
+                recommendedRequest,
+                currentCost,
+                recommendedCost,
+                round(savings),
+                round(savingsPercent)
         );
+    }
+
+    public CostResponseDto calculateCurrentCost(ResourceRequestDto currentRequest) {
+        CostResponseDto currentCost = costCalculator.calculate(ResourceCostType.CURRENT, currentRequest);
+        resourceOptimizerMetrics.publish(ResourceCostType.CURRENT, currentRequest, currentCost);
+        return currentCost;
     }
 
     public String getQueryRange(double prometheusRunningHours) {
@@ -63,5 +59,9 @@ public class ResourceRecommendationService {
         }
 
         return "12h";
+    }
+
+    private double round(double value) {
+        return Math.round(value * 10000.0) / 10000.0;
     }
 }
