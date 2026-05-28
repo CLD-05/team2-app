@@ -4,21 +4,28 @@ import com.example.resourceops.recommendation.dto.CostResponseDto;
 import com.example.resourceops.recommendation.dto.ObservedMetricDto;
 import com.example.resourceops.recommendation.dto.OptimizationCompareResponseDto;
 import com.example.resourceops.recommendation.dto.PricingModel;
+import com.example.resourceops.recommendation.dto.ResourceRecommendationResponse;
 import com.example.resourceops.recommendation.dto.ResourceRequestDto;
 import com.example.resourceops.recommendation.service.ResourceRecommendationService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/recommendations")
+@RequiredArgsConstructor
 public class ResourceRecommendationController {
 
     private final ResourceRecommendationService recommendationService;
+
+    @Operation(summary = "Prometheus 기반 CPU/Memory request 분석")
+    @PostMapping("/analyze")
+    public ResourceRecommendationResponse analyze(
+            @RequestParam double cpuRequest,
+            @RequestParam double memoryRequestMb
+    ) {
+        return recommendationService.analyze(cpuRequest, memoryRequestMb);
+    }
 
     @Operation(summary = "현재 request와 관측 metric 기반 비용 비교 및 optimizer metric 갱신")
     @GetMapping("/compare")
@@ -34,6 +41,7 @@ public class ResourceRecommendationController {
             @RequestParam(defaultValue = "ON_DEMAND") PricingModel pricingModel
     ) {
         ResourceRequestDto currentRequest = new ResourceRequestDto(cpuRequestMillicores, memoryRequestMiB);
+
         ObservedMetricDto observedMetric = new ObservedMetricDto(
                 avgCpuUsageMillicores,
                 p95CpuUsageMillicores,
