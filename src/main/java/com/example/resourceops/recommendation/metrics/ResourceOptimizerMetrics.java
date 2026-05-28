@@ -31,12 +31,6 @@ public class ResourceOptimizerMetrics {
         metricValues.update(resourceRequest, cost);
     }
 
-    public void publish(ResourceCostType type, CostResponseDto cost) {
-        MetricKey key = new MetricKey(type.name(), cost.costComponent(), cost.instanceType(), cost.pricingModel());
-        MetricValues metricValues = values.computeIfAbsent(key, this::registerMetrics);
-        metricValues.update(cost);
-    }
-
     @Scheduled(fixedRateString = "${resource-optimizer.cost.accumulation-interval-ms:60000}")
     public void accumulateCost() {
         Instant now = Instant.now();
@@ -113,16 +107,6 @@ public class ResourceOptimizerMetrics {
         synchronized void update(ResourceRequestDto resourceRequest, CostResponseDto cost) {
             cpuRequestMillicores.set((double) resourceRequest.cpuMillicores());
             memoryRequestMiB.set((double) resourceRequest.memoryMiB());
-            allocationRatio.set(Math.max(cost.cpuAllocationRatio(), cost.memoryAllocationRatio()));
-            hourlyCostUsd.set(cost.hourlyCostUsd());
-            monthlyCostUsd.set(cost.monthlyCostUsd());
-
-            if (lastAccumulatedAt == null) {
-                lastAccumulatedAt = Instant.now();
-            }
-        }
-
-        synchronized void update(CostResponseDto cost) {
             allocationRatio.set(Math.max(cost.cpuAllocationRatio(), cost.memoryAllocationRatio()));
             hourlyCostUsd.set(cost.hourlyCostUsd());
             monthlyCostUsd.set(cost.monthlyCostUsd());
