@@ -26,7 +26,7 @@ public class ResourceOptimizerMetrics {
     }
 
     public void publish(ResourceCostType type, ResourceRequestDto resourceRequest, CostResponseDto cost) {
-        MetricKey key = new MetricKey(type.name(), cost.instanceType(), cost.pricingModel());
+        MetricKey key = new MetricKey(type.name(), cost.costComponent(), cost.instanceType(), cost.pricingModel());
         MetricValues metricValues = values.computeIfAbsent(key, this::registerMetrics);
         metricValues.update(resourceRequest, cost);
     }
@@ -43,6 +43,7 @@ public class ResourceOptimizerMetrics {
         Gauge.builder("resource_optimizer_cpu_request_millicores", metricValues.cpuRequestMillicores, AtomicReference::get)
                 .description("Current or recommended Kubernetes CPU request in millicores")
                 .tag("type", key.type())
+                .tag("cost_component", key.costComponent())
                 .tag("instance_type", key.instanceType())
                 .tag("pricing_model", key.pricingModel())
                 .register(meterRegistry);
@@ -50,6 +51,7 @@ public class ResourceOptimizerMetrics {
         Gauge.builder("resource_optimizer_memory_request_mib", metricValues.memoryRequestMiB, AtomicReference::get)
                 .description("Current or recommended Kubernetes memory request in MiB")
                 .tag("type", key.type())
+                .tag("cost_component", key.costComponent())
                 .tag("instance_type", key.instanceType())
                 .tag("pricing_model", key.pricingModel())
                 .register(meterRegistry);
@@ -57,6 +59,7 @@ public class ResourceOptimizerMetrics {
         Gauge.builder("resource_optimizer_allocation_ratio", metricValues.allocationRatio, AtomicReference::get)
                 .description("Dominant node resource allocation ratio used for cost allocation")
                 .tag("type", key.type())
+                .tag("cost_component", key.costComponent())
                 .tag("instance_type", key.instanceType())
                 .tag("pricing_model", key.pricingModel())
                 .register(meterRegistry);
@@ -64,6 +67,7 @@ public class ResourceOptimizerMetrics {
         Gauge.builder("resource_optimizer_cost_hourly_usd", metricValues.hourlyCostUsd, AtomicReference::get)
                 .description("Estimated hourly request-based resource cost in USD")
                 .tag("type", key.type())
+                .tag("cost_component", key.costComponent())
                 .tag("instance_type", key.instanceType())
                 .tag("pricing_model", key.pricingModel())
                 .register(meterRegistry);
@@ -71,6 +75,7 @@ public class ResourceOptimizerMetrics {
         Gauge.builder("resource_optimizer_cost_monthly_usd", metricValues.monthlyCostUsd, AtomicReference::get)
                 .description("Estimated monthly request-based resource cost in USD")
                 .tag("type", key.type())
+                .tag("cost_component", key.costComponent())
                 .tag("instance_type", key.instanceType())
                 .tag("pricing_model", key.pricingModel())
                 .register(meterRegistry);
@@ -78,6 +83,7 @@ public class ResourceOptimizerMetrics {
         metricValues.accumulatedCostUsd = Counter.builder("resource_optimizer_cost_usd")
                 .description("Accumulated estimated request-based resource cost in USD")
                 .tag("type", key.type())
+                .tag("cost_component", key.costComponent())
                 .tag("instance_type", key.instanceType())
                 .tag("pricing_model", key.pricingModel())
                 .register(meterRegistry);
@@ -85,7 +91,7 @@ public class ResourceOptimizerMetrics {
         return metricValues;
     }
 
-    private record MetricKey(String type, String instanceType, String pricingModel) {
+    private record MetricKey(String type, String costComponent, String instanceType, String pricingModel) {
     }
 
     private static class MetricValues {

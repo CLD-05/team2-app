@@ -1,6 +1,7 @@
 package com.example.resourceops.recommendation.calculator;
 
 import com.example.resourceops.recommendation.dto.CostResponseDto;
+import com.example.resourceops.recommendation.dto.CostComponent;
 import com.example.resourceops.recommendation.dto.InstancePricingInfo;
 import com.example.resourceops.recommendation.dto.PricingModel;
 import com.example.resourceops.recommendation.dto.ResourceCostType;
@@ -36,6 +37,7 @@ public class CostCalculator {
 
         return new CostResponseDto(
                 type.name(),
+                CostComponent.WORKLOAD_REQUEST.name(),
                 pricingInfo.instanceType(),
                 pricingModel.name(),
                 round(cpuAllocationRatio),
