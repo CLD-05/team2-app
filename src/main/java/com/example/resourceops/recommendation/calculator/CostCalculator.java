@@ -1,42 +1,48 @@
 package com.example.resourceops.recommendation.calculator;
 
 import com.example.resourceops.recommendation.dto.CostResponseDto;
+import com.example.resourceops.recommendation.dto.InstancePricingInfo;
+import com.example.resourceops.recommendation.dto.PricingModel;
 import com.example.resourceops.recommendation.dto.ResourceCostType;
 import com.example.resourceops.recommendation.dto.ResourceRequestDto;
-import org.springframework.beans.factory.annotation.Value;
+import com.example.resourceops.recommendation.pricing.InstancePricingCatalog;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class CostCalculator {
 
     private static final double HOURS_PER_MONTH = 730.0;
 
-    private final double cpuCoreHourUsd;
-    private final double memoryGiBHourUsd;
+    private final InstancePricingCatalog instancePricingCatalog;
 
-    public CostCalculator(
-            @Value("${resource-optimizer.cost.cpu-core-hour-usd:0.0416}") double cpuCoreHourUsd,
-            @Value("${resource-optimizer.cost.memory-gib-hour-usd:0.0052}") double memoryGiBHourUsd
+    public CostResponseDto calculate(
+            ResourceCostType type,
+            ResourceRequestDto resourceRequest,
+            String instanceType,
+            PricingModel pricingModel
     ) {
-        this.cpuCoreHourUsd = cpuCoreHourUsd;
-        this.memoryGiBHourUsd = memoryGiBHourUsd;
-    }
-
-    public CostResponseDto calculate(ResourceCostType type, ResourceRequestDto resourceRequest) {
         validate(resourceRequest);
 
-        double cpuCores = resourceRequest.cpuMillicores() / 1000.0;
-        double memoryGiB = resourceRequest.memoryMiB() / 1024.0;
+        InstancePricingInfo pricingInfo = instancePricingCatalog.get(instanceType);
+        double cpuAllocationRatio = resourceRequest.cpuMillicores() / (pricingInfo.vcpus() * 1000.0);
+        double memoryAllocationRatio = resourceRequest.memoryMiB() / (pricingInfo.memoryGiB() * 1024.0);
+        double allocationRatio = Math.max(cpuAllocationRatio, memoryAllocationRatio);
 
-        double cpuCost = cpuCores * cpuCoreHourUsd * HOURS_PER_MONTH;
-        double memoryCost = memoryGiB * memoryGiBHourUsd * HOURS_PER_MONTH;
-        double totalCost = cpuCost + memoryCost;
+        double hourlyCost = pricingInfo.hourlyPrice(pricingModel) * allocationRatio;
+        double monthlyCost = hourlyCost * HOURS_PER_MONTH;
+        String dominantResource = cpuAllocationRatio >= memoryAllocationRatio ? "CPU" : "MEMORY";
 
         return new CostResponseDto(
                 type.name(),
-                round(cpuCost),
-                round(memoryCost),
-                round(totalCost)
+                pricingInfo.instanceType(),
+                pricingModel.name(),
+                round(cpuAllocationRatio),
+                round(memoryAllocationRatio),
+                dominantResource,
+                round(hourlyCost),
+                round(monthlyCost)
         );
     }
 

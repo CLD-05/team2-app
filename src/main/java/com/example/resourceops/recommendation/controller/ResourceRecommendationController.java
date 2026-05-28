@@ -3,6 +3,7 @@ package com.example.resourceops.recommendation.controller;
 import com.example.resourceops.recommendation.dto.CostResponseDto;
 import com.example.resourceops.recommendation.dto.ObservedMetricDto;
 import com.example.resourceops.recommendation.dto.OptimizationCompareResponseDto;
+import com.example.resourceops.recommendation.dto.PricingModel;
 import com.example.resourceops.recommendation.dto.ResourceRequestDto;
 import com.example.resourceops.recommendation.service.ResourceRecommendationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,7 +29,9 @@ public class ResourceRecommendationController {
             @RequestParam(defaultValue = "0") double p95CpuUsageMillicores,
             @RequestParam double avgMemoryUsageMiB,
             @RequestParam(defaultValue = "0") double p95MemoryUsageMiB,
-            @RequestParam(defaultValue = "0") int restartCount
+            @RequestParam(defaultValue = "0") int restartCount,
+            @RequestParam(defaultValue = "t3.medium") String instanceType,
+            @RequestParam(defaultValue = "ON_DEMAND") PricingModel pricingModel
     ) {
         ResourceRequestDto currentRequest = new ResourceRequestDto(cpuRequestMillicores, memoryRequestMiB);
         ObservedMetricDto observedMetric = new ObservedMetricDto(
@@ -39,17 +42,19 @@ public class ResourceRecommendationController {
                 restartCount
         );
 
-        return recommendationService.compare(currentRequest, observedMetric);
+        return recommendationService.compare(currentRequest, observedMetric, instanceType, pricingModel);
     }
 
     @Operation(summary = "현재 request 기준 비용 계산 및 CURRENT metric 갱신")
     @GetMapping("/cost/current")
     public CostResponseDto calculateCurrentCost(
             @RequestParam int cpuRequestMillicores,
-            @RequestParam int memoryRequestMiB
+            @RequestParam int memoryRequestMiB,
+            @RequestParam(defaultValue = "t3.medium") String instanceType,
+            @RequestParam(defaultValue = "ON_DEMAND") PricingModel pricingModel
     ) {
         ResourceRequestDto currentRequest = new ResourceRequestDto(cpuRequestMillicores, memoryRequestMiB);
-        return recommendationService.calculateCurrentCost(currentRequest);
+        return recommendationService.calculateCurrentCost(currentRequest, instanceType, pricingModel);
     }
 
     @Operation(summary = "Prometheus 평균 계산 기준 시간 조회")

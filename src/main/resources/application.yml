@@ -24,7 +24,5 @@ management:
 
 resource-optimizer:
   cost:
-    # Estimated request-based unit prices for Grafana comparison.
-    # Override these values with environment variables in real environments.
-    cpu-core-hour-usd: 0.0416
-    memory-gib-hour-usd: 0.0052
+    # Accumulates resource_optimizer_cost_usd_total once per minute.
+    accumulation-interval-ms: 60000

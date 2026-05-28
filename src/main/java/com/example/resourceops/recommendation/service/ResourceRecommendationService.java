@@ -5,6 +5,7 @@ import com.example.resourceops.recommendation.calculator.RecommendationCalculato
 import com.example.resourceops.recommendation.dto.CostResponseDto;
 import com.example.resourceops.recommendation.dto.ObservedMetricDto;
 import com.example.resourceops.recommendation.dto.OptimizationCompareResponseDto;
+import com.example.resourceops.recommendation.dto.PricingModel;
 import com.example.resourceops.recommendation.dto.ResourceCostType;
 import com.example.resourceops.recommendation.dto.ResourceRequestDto;
 import com.example.resourceops.recommendation.metrics.ResourceOptimizerMetrics;
@@ -19,18 +20,33 @@ public class ResourceRecommendationService {
     private final RecommendationCalculator recommendationCalculator;
     private final ResourceOptimizerMetrics resourceOptimizerMetrics;
 
-    public OptimizationCompareResponseDto compare(ResourceRequestDto currentRequest, ObservedMetricDto observedMetric) {
-        CostResponseDto currentCost = costCalculator.calculate(ResourceCostType.CURRENT, currentRequest);
+    public OptimizationCompareResponseDto compare(
+            ResourceRequestDto currentRequest,
+            ObservedMetricDto observedMetric,
+            String instanceType,
+            PricingModel pricingModel
+    ) {
+        CostResponseDto currentCost = costCalculator.calculate(
+                ResourceCostType.CURRENT,
+                currentRequest,
+                instanceType,
+                pricingModel
+        );
         ResourceRequestDto recommendedRequest = recommendationCalculator.calculate(currentRequest, observedMetric);
-        CostResponseDto recommendedCost = costCalculator.calculate(ResourceCostType.RECOMMENDED, recommendedRequest);
+        CostResponseDto recommendedCost = costCalculator.calculate(
+                ResourceCostType.RECOMMENDED,
+                recommendedRequest,
+                instanceType,
+                pricingModel
+        );
 
         resourceOptimizerMetrics.publish(ResourceCostType.CURRENT, currentRequest, currentCost);
         resourceOptimizerMetrics.publish(ResourceCostType.RECOMMENDED, recommendedRequest, recommendedCost);
 
-        double savings = currentCost.totalCostPerMonthUsd() - recommendedCost.totalCostPerMonthUsd();
-        double savingsPercent = currentCost.totalCostPerMonthUsd() == 0.0
+        double savings = currentCost.monthlyCostUsd() - recommendedCost.monthlyCostUsd();
+        double savingsPercent = currentCost.monthlyCostUsd() == 0.0
                 ? 0.0
-                : savings / currentCost.totalCostPerMonthUsd() * 100.0;
+                : savings / currentCost.monthlyCostUsd() * 100.0;
 
         return new OptimizationCompareResponseDto(
                 currentRequest,
@@ -43,8 +59,17 @@ public class ResourceRecommendationService {
         );
     }
 
-    public CostResponseDto calculateCurrentCost(ResourceRequestDto currentRequest) {
-        CostResponseDto currentCost = costCalculator.calculate(ResourceCostType.CURRENT, currentRequest);
+    public CostResponseDto calculateCurrentCost(
+            ResourceRequestDto currentRequest,
+            String instanceType,
+            PricingModel pricingModel
+    ) {
+        CostResponseDto currentCost = costCalculator.calculate(
+                ResourceCostType.CURRENT,
+                currentRequest,
+                instanceType,
+                pricingModel
+        );
         resourceOptimizerMetrics.publish(ResourceCostType.CURRENT, currentRequest, currentCost);
         return currentCost;
     }
