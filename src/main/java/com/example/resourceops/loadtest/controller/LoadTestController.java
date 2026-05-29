@@ -53,4 +53,24 @@ public class LoadTestController {
     ) {
         return ResponseEntity.ok(loadTestService.delayLoad(delayMs));
     }
+
+    /**
+     * Response size load test
+     * GET /api/load/response?sizeKb=5120
+     * sizeKb: 1 ~ 10240KB
+     */
+    @GetMapping(
+            value = "/response",
+            produces = "application/octet-stream"
+    )
+    public ResponseEntity<byte[]> responseLoad(
+            @RequestParam(defaultValue = "100") int sizeKb
+    ) {
+        byte[] data = loadTestService.responseLoad(sizeKb);
+
+        return ResponseEntity.ok()
+                .header("Content-Length", String.valueOf(data.length))
+                .header("Content-Disposition", "attachment; filename=\"load-test-" + sizeKb + "kb.bin\"")
+                .body(data);
+    }
 }

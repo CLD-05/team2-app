@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Service
 public class LoadTestService {
@@ -13,6 +14,9 @@ public class LoadTestService {
     private static final int MAX_MEMORY_MB = 128;
     private static final int MAX_HOLD_SECONDS = 60;
     private static final long MAX_DELAY_MS = 10000;
+    private static final int MAX_RESPONSE_KB = 10240;
+
+    private final Random random = new Random();
 
     public LoadTestResponse cpuLoad(long durationMs) {
         if (durationMs < 1 || durationMs > MAX_DURATION_MS) {
@@ -62,5 +66,16 @@ public class LoadTestService {
         }
 
         return new LoadTestResponse("DELAY", delayMs, "Delay of " + delayMs + "ms applied");
+    }
+
+    public byte[] responseLoad(int sizeKb) {
+        if (sizeKb < 1 || sizeKb > MAX_RESPONSE_KB) {
+            throw new IllegalArgumentException("sizeKb must be between 1 and " + MAX_RESPONSE_KB);
+        }
+
+        byte[] data = new byte[sizeKb * 1024];
+        random.nextBytes(data);
+
+        return data;
     }
 }
