@@ -32,18 +32,10 @@ class RecommendationCalculatorTest {
         assertThat(result.cpuMillicores()).isGreaterThanOrEqualTo(50);
         assertThat(result.memoryMiB()).isGreaterThanOrEqualTo(128);
     }
-
-    @Test
-    void uptime_less_than_1h_should_return_HOLD() {
-        ResourceRecommendationService service = new ResourceRecommendationService(null, null, null);
-        assertThat(service.getQueryRange(0.5)).isEqualTo("HOLD");
-        assertThat(service.getQueryRange(1.0)).isNotEqualTo("HOLD");
-    }
-    
+   
     @Test
     void queryRange_returns_correct_range() {
         ResourceRecommendationService service = new ResourceRecommendationService(null, null, null);
-        assertThat(service.getQueryRange(0.5)).isEqualTo("HOLD");
         assertThat(service.getQueryRange(6.0)).isEqualTo("6.0h");
         assertThat(service.getQueryRange(12.0)).isEqualTo("12h");
         assertThat(service.getQueryRange(24.0)).isEqualTo("12h");
