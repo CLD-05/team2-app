@@ -39,4 +39,13 @@ class RecommendationCalculatorTest {
         assertThat(service.getQueryRange(0.5)).isEqualTo("HOLD");
         assertThat(service.getQueryRange(1.0)).isNotEqualTo("HOLD");
     }
+    
+    @Test
+    void queryRange_returns_correct_range() {
+        ResourceRecommendationService service = new ResourceRecommendationService(null, null, null);
+        assertThat(service.getQueryRange(0.5)).isEqualTo("HOLD");
+        assertThat(service.getQueryRange(6.0)).isEqualTo("6.0h");
+        assertThat(service.getQueryRange(12.0)).isEqualTo("12h");
+        assertThat(service.getQueryRange(24.0)).isEqualTo("12h");
+    }
 }
