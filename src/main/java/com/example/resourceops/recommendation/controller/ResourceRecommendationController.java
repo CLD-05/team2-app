@@ -31,7 +31,8 @@ public class ResourceRecommendationController {
             @RequestParam(defaultValue = "0") double p95MemoryUsageMiB,
             @RequestParam(defaultValue = "0") int restartCount,
             @RequestParam(defaultValue = "t3.medium") String instanceType,
-            @RequestParam(defaultValue = "ON_DEMAND") PricingModel pricingModel
+            @RequestParam(defaultValue = "ON_DEMAND") PricingModel pricingModel,
+            @RequestParam(defaultValue = "99") double prometheusRunningHours
     ) {
         ResourceRequestDto currentRequest = new ResourceRequestDto(cpuRequestMillicores, memoryRequestMiB);
         ObservedMetricDto observedMetric = new ObservedMetricDto(
@@ -39,7 +40,8 @@ public class ResourceRecommendationController {
                 p95CpuUsageMillicores,
                 avgMemoryUsageMiB,
                 p95MemoryUsageMiB,
-                restartCount
+                restartCount,
+                prometheusRunningHours
         );
 
         return recommendationService.compare(currentRequest, observedMetric, instanceType, pricingModel);

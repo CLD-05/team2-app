@@ -26,6 +26,11 @@ public class ResourceRecommendationService {
             String instanceType,
             PricingModel pricingModel
     ) {
+        String queryRange = getQueryRange(observedMetric.prometheusRunningHours());
+        if (queryRange.equals("HOLD")) {
+        	throw new IllegalStateException("Recommendation hold: uptime < 1h");
+        }
+    	
         CostResponseDto currentCost = costCalculator.calculate(
                 ResourceCostType.CURRENT,
                 currentRequest,
