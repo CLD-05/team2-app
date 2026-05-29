@@ -2,6 +2,7 @@ package com.example.resourceops.recommendation.calculator;
 
 import com.example.resourceops.recommendation.config.AwsCostProperties;
 import com.example.resourceops.recommendation.config.AwsPricingProperties;
+import com.example.resourceops.recommendation.config.CostSimulationProperties;
 import com.example.resourceops.recommendation.dto.AwsTrafficUsageDto;
 import com.example.resourceops.recommendation.dto.CostComponent;
 import com.example.resourceops.recommendation.dto.CostResponseDto;
@@ -9,6 +10,9 @@ import com.example.resourceops.recommendation.dto.ResourceCostType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Component
@@ -19,6 +23,7 @@ public class TrafficCostCalculator {
 
     private final AwsCostProperties awsCostProperties;
     private final AwsPricingProperties awsPricingProperties;
+    private final CostSimulationProperties costSimulationProperties;
 
     public List<CostResponseDto> calculate(ResourceCostType type, AwsTrafficUsageDto trafficUsage) {
         return List.of(
@@ -34,6 +39,12 @@ public class TrafficCostCalculator {
                 + awsPricingProperties.getAlbLcuHourUsd() * trafficUsage.albConsumedLcuHours();
         double hourlyCost = intervalCost / intervalHours;
 
+        if (type == ResourceCostType.RECOMMENDED
+                && costSimulationProperties.isAlbNightShutdownEnabled()
+                && isDevNight()) {
+            hourlyCost = 0.0;
+        }
+
         return response(type, CostComponent.ALB, hourlyCost);
     }
 
@@ -42,6 +53,12 @@ public class TrafficCostCalculator {
         double intervalCost = awsPricingProperties.getNatGatewayHourUsd() * intervalHours
                 + awsPricingProperties.getNatGatewayDataGbUsd() * trafficUsage.natGatewayProcessedGiB();
         double hourlyCost = intervalCost / intervalHours;
+
+        if (type == ResourceCostType.RECOMMENDED
+                && costSimulationProperties.isNatNightShutdownEnabled()
+                && isDevNight()) {
+            hourlyCost = 0.0;
+        }
 
         return response(type, CostComponent.NAT_GATEWAY, hourlyCost);
     }
@@ -70,5 +87,21 @@ public class TrafficCostCalculator {
 
     private double round(double value) {
         return Math.round(value * 10000.0) / 10000.0;
+    }
+
+    private boolean isDevNight() {
+        LocalTime now = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).toLocalTime();
+        LocalTime start = LocalTime.parse(costSimulationProperties.getDevNightStartTime());
+        LocalTime end = LocalTime.parse(costSimulationProperties.getDevNightEndTime());
+
+        if (start.equals(end)) {
+            return false;
+        }
+
+        if (start.isBefore(end)) {
+            return !now.isBefore(start) && now.isBefore(end);
+        }
+
+        return !now.isBefore(start) || now.isBefore(end);
     }
 }

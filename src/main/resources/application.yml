@@ -40,3 +40,8 @@ resource-optimizer:
     nat-gateway-hour-usd: 0.045
     nat-gateway-data-gb-usd: 0.045
     data-transfer-out-gb-usd: 0.09
+  simulation:
+    dev-night-start-time: "17:20"
+    dev-night-end-time: "08:00"
+    alb-night-shutdown-enabled: true
+    nat-night-shutdown-enabled: true
