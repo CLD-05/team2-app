@@ -8,6 +8,7 @@ import com.example.resourceops.recommendation.dto.CostComponent;
 import com.example.resourceops.recommendation.dto.CostResponseDto;
 import com.example.resourceops.recommendation.dto.ResourceCostType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalTime;
@@ -15,6 +16,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TrafficCostCalculator {
@@ -94,14 +96,16 @@ public class TrafficCostCalculator {
         LocalTime start = LocalTime.parse(costSimulationProperties.getDevNightStartTime());
         LocalTime end = LocalTime.parse(costSimulationProperties.getDevNightEndTime());
 
+        boolean result;
         if (start.equals(end)) {
-            return false;
+            result = false;
+        } else if (start.isBefore(end)) {
+            result = !now.isBefore(start) && now.isBefore(end);
+        } else {
+            result = !now.isBefore(start) || now.isBefore(end);
         }
 
-        if (start.isBefore(end)) {
-            return !now.isBefore(start) && now.isBefore(end);
-        }
-
-        return !now.isBefore(start) || now.isBefore(end);
+        log.info("Cost simulation time check now={}, start={}, end={}, isDevNight={}", now, start, end, result);
+        return result;
     }
 }
