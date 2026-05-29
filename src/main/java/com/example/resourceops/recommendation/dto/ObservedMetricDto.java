@@ -5,6 +5,7 @@ public record ObservedMetricDto(
         double p95CpuUsageMillicores,
         double avgMemoryUsageMiB,
         double p95MemoryUsageMiB,
-        int restartCount
+        int restartCount,
+        double prometheusRunningHours
 ) {
 }

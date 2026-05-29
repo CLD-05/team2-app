@@ -7,6 +7,7 @@ public record OptimizationCompareResponseDto(
         CostResponseDto currentCost,
         CostResponseDto recommendedCost,
         double potentialSavingsPerMonthUsd,
-        double potentialSavingsPercent
+        double potentialSavingsPercent,
+        String queryRange
 ) {
 }

@@ -55,7 +55,8 @@ public class ResourceRecommendationService {
                 currentCost,
                 recommendedCost,
                 round(savings),
-                round(savingsPercent)
+                round(savingsPercent),
+                getQueryRange(observedMetric.prometheusRunningHours())
         );
     }
 

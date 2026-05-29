@@ -9,6 +9,9 @@ public class RecommendationCalculator {
 
     private static final int MIN_CPU_MILLICORES = 50;
     private static final int MIN_MEMORY_MIB = 128;
+    private static final int MAX_CPU_MILLICORES = 2000;
+    private static final int MAX_MEMORY_MIB = 3072;
+    private static final double MAX_SCALE_UP_RATIO = 2.0;
     private static final double CPU_AVG_BUFFER = 2.0;
     private static final double CPU_P95_BUFFER = 1.2;
     private static final double MEMORY_AVG_BUFFER = 1.5;
@@ -39,7 +42,12 @@ public class RecommendationCalculator {
         if (observedMetric.restartCount() > 0) {
             recommendedMemory = Math.max(recommendedMemory, currentRequest.memoryMiB());
         }
-
+        
+        recommendedCpu = Math.min(recommendedCpu, (int)(currentRequest.cpuMillicores() * MAX_SCALE_UP_RATIO));
+        recommendedMemory = Math.min(recommendedMemory, (int)(currentRequest.memoryMiB() * MAX_SCALE_UP_RATIO));
+        recommendedCpu = Math.min(recommendedCpu, MAX_CPU_MILLICORES);
+        recommendedMemory = Math.min(recommendedMemory, MAX_MEMORY_MIB);
+        
         return new ResourceRequestDto(recommendedCpu, recommendedMemory);
     }
 
