@@ -6,6 +6,8 @@ public record OptimizationCompareResponseDto(
         ResourceRequestDto recommendedResource,
         CostResponseDto currentCost,
         CostResponseDto recommendedCost,
+        TotalCostSummaryDto currentTotalCost,
+        TotalCostSummaryDto recommendedTotalCost,
         double potentialSavingsPerMonthUsd,
         double potentialSavingsPercent
 ) {
